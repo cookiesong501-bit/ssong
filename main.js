@@ -7,12 +7,12 @@ function persist(){fs.mkdirSync(app.getPath('userData'),{recursive:true});fs.wri
 const reminderFile=()=>path.join(app.getPath('userData'),'reminders.json');
 function persistReminders(){fs.writeFileSync(reminderFile()+'.tmp',JSON.stringify(reminders,null,2),'utf8');fs.renameSync(reminderFile()+'.tmp',reminderFile())}
 function show(){if(win.isMinimized())win.restore();win.show();win.focus()}
-function create(){win=new BrowserWindow({width:1220,height:820,minWidth:980,minHeight:680,backgroundColor:'#f5f6fa',webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false}});win.loadFile('src/index.html');win.on('close',e=>{if(!quitting){e.preventDefault();win.hide()}})}
+function create(){win=new BrowserWindow({width:1220,height:820,minWidth:980,minHeight:680,backgroundColor:'#f5efe5',webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false}});win.loadFile('src/index.html');win.on('close',e=>{if(!quitting){e.preventDefault();win.hide()}})}
 function nextAlert(){
  if(alertWindow||!queue.length)return;
  const item=queue.shift(),task=(item.kind==='reminder'?reminders:tasks).find(t=>t.id===item.id);
  if(!task||(item.kind==='reminder'?!task.active:['done','hold'].includes(task.status))||(item.kind==='warning'&&Date.now()>=model.bounds(task).end.getTime())||(item.kind==='start'&&Date.now()>=model.bounds(task).end.getTime())){nextAlert();return}
- alertWindow=new BrowserWindow({width:480,height:360,resizable:false,alwaysOnTop:true,autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,autoplayPolicy:'no-user-gesture-required'}});
+ alertWindow=new BrowserWindow({width:480,height:400,resizable:false,alwaysOnTop:true,autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,autoplayPolicy:'no-user-gesture-required'}});
  alertWindow.webContents.once('did-finish-load',()=>{alertWindow.webContents.send('alert-data',{task,...item})});
  alertWindow.loadFile('src/alert.html');
  alertWindow.on('closed',()=>{alertWindow=null;nextAlert()});
