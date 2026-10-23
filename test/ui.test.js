@@ -25,7 +25,14 @@ test('friendly popups show correct choices and request bell playback',async()=>{
   handler({task:{id:'1',text:'물 마시기',interval:5,count:5},kind,number:2});
   assert.equal(played,1);assert.match(w.document.getElementById('task').textContent,/물 마시기/);
   if(kind==='warning')assert.match(w.document.getElementById('title').textContent,/10분/);
-  if(kind==='reminder'){assert.match(w.document.getElementById('title').textContent,/5분 간격 · 2번째/);assert.equal(w.document.querySelectorAll('button').length,1)}
-  w.document.querySelector('button').click();assert.equal(answer.id,'1');assert.equal(answer.status,kind==='reminder'?'ack':kind==='start'?'active':'done');w.close();
+  if(kind==='reminder'){assert.match(w.document.getElementById('title').textContent,/5분 간격 · 2번째/);assert.equal(w.document.querySelectorAll('#actions button').length,1)}
+  w.document.querySelector('#actions button').click();assert.equal(answer.id,'1');assert.equal(answer.status,kind==='reminder'?'ack':kind==='start'?'active':'done');w.close();
  }
+});
+test('custom title buttons dispatch window actions and update restore label',()=>{
+ const dom=new JSDOM(fs.readFileSync('src/index.html','utf8'),{runScripts:'dangerously'}),w=dom.window;let state;const sent=[];
+ w.todo={windowControl:action=>sent.push(action),onWindowState:fn=>state=fn};
+ const s=w.document.createElement('script');s.textContent=fs.readFileSync('src/window-controls.js','utf8');w.document.body.append(s);
+ for(const action of ['minimize','maximize','close'])w.document.querySelector(`[data-window="${action}"]`).click();
+ assert.deepEqual(sent,['minimize','maximize','close']);state(true);assert.equal(w.document.getElementById('maximize-window').getAttribute('aria-label'),'이전 크기로');state(false);assert.equal(w.document.getElementById('maximize-window').title,'최대화');w.close();
 });

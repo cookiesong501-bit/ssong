@@ -134,3 +134,15 @@ body.alert { min-height: 100vh; padding: 27px; background: #fcf6eb; border-top: 
 .alert p { margin: 9px 0; }
 .alert #task { max-height: 72px; overflow-y: auto; overflow-wrap: anywhere; }
 .alert .status-actions { margin: 17px 0 0; }
+/* The cream header replaces the operating system title bar. */
+header { -webkit-app-region: drag; user-select: none; padding-right: 16px; }
+.header-actions { display: flex; align-items: center; gap: 20px; }
+.header-actions, .window-controls, .alert-titlebar button { -webkit-app-region: no-drag; }
+.window-controls { display: flex; gap: 3px; }
+.window-controls button, .alert-titlebar button { display: grid; place-items: center; border: 0; background: transparent; border-radius: 7px; color: #8a7767; font-size: 20px; width: 36px; height: 32px; padding: 0; }
+.window-controls button:hover, .alert-titlebar button:hover { background: #eee2d2; }
+.window-controls .window-close:hover, .alert-titlebar .window-close:hover { background: #f2d4c9; color: #965b4a; }
+.alert-titlebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; -webkit-app-region: drag; user-select: none; }
+.alert-titlebar .eyebrow { pointer-events: none; }
+body.alert { padding-top: 16px; }
+@media (max-width: 1060px) { .header-actions { gap: 10px; } header { padding-right: 12px; } }
