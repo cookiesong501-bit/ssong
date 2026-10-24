@@ -38,6 +38,17 @@
  }
  function updateSelection(){for(const b of $('plan-grid').querySelectorAll('button[data-cell]')){const selected=selection.has(b.dataset.cell);b.classList.toggle('range-selected',selected);b.setAttribute('aria-pressed',String(selected))}$('plan-paint-selection').disabled=selection.size===0}
  function showPalette(){if(!selection.size)return;$('plan-date').textContent=`선택한 ${selection.size}칸 색칠`;$('plan-dialog').showModal()}
+ let draggedPlan=null;
+ function movePlan(id,targetIndex,focusClass='plan-drag-handle'){
+  const next=copy(),from=next.plans.findIndex(p=>p.id===id);
+  if(from<0||targetIndex<0||targetIndex>=next.plans.length||from===targetIndex)return;
+  const [plan]=next.plans.splice(from,1);next.plans.splice(targetIndex,0,plan);
+  if(persist(next)){anchor=null;dragging=false;renderPlans();
+   const row=[...$('plan-grid').querySelectorAll('tr[data-plan-id]')].find(r=>r.dataset.planId===id);
+   row?.querySelector('.'+focusClass)?.focus({preventScroll:true});
+  }
+ }
+ function clearPlanDrag(){draggedPlan=null;for(const row of $('plan-grid').querySelectorAll('.plan-drop-target'))row.classList.remove('plan-drop-target')}
  function renderPlans(){
   $('plan-month-title').textContent=`${planMonth.getFullYear()}년 ${planMonth.getMonth()+1}월 · 월간 계획`;
   const dates=tableDates();for(const year of new Set(dates.map(d=>d.getFullYear())))ensureHolidays(year);
@@ -47,10 +58,19 @@
   for(const date of dates){const adjacent=date.getMonth()!==planMonth.getMonth(),key=TodoModel.dateKey(date),th=el('th',(adjacent?'adjacent ':'')+dateClass(date),adjacent?`${date.getMonth()+1}/${date.getDate()}`:date.getDate());th.scope='col';th.title=key+(holidayName(key)?' · '+holidayName(key):'');th.dataset.date=key;tr.append(th)}head.append(tr);table.append(head);
   const body=el('tbody');
   for(const [rowIndex,p] of data.plans.entries()){
-   const row=el('tr'),title=el('th','plan-name '+p.color);title.scope='row';
+   const row=el('tr'),title=el('th','plan-name '+p.color);title.scope='row';row.dataset.planId=p.id;
+   row.ondragover=e=>{if(!draggedPlan||draggedPlan===p.id)return;e.preventDefault();e.dataTransfer.dropEffect='move';for(const r of body.children)r.classList.remove('plan-drop-target');row.classList.add('plan-drop-target')};
+   row.ondragleave=e=>{if(!row.contains(e.relatedTarget))row.classList.remove('plan-drop-target')};
+   row.ondrop=e=>{if(!draggedPlan)return;e.preventDefault();const id=draggedPlan;clearPlanDrag();movePlan(id,rowIndex)};
+   const controls=el('span','plan-row-controls'),handle=el('button','plan-drag-handle','⠿');handle.type='button';handle.draggable=true;handle.title='끌어서 순서 변경 · Alt+↑/↓';handle.setAttribute('aria-label',p.title+' 순서 변경, 끌기 또는 Alt+위아래 화살표');
+   handle.ondragstart=e=>{dragging=false;draggedPlan=p.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',p.id)};handle.ondragend=clearPlanDrag;
+   handle.onkeydown=e=>{if(e.altKey&&['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();movePlan(p.id,rowIndex+(e.key==='ArrowUp'?-1:1))}};
+   const arrows=el('span','plan-order-arrows');
+   for(const [delta,symbol,cls,label] of [[-1,'↑','plan-move-up','위로'],[1,'↓','plan-move-down','아래로']]){const b=el('button',cls,symbol);b.type='button';b.disabled=rowIndex+delta<0||rowIndex+delta>=data.plans.length;b.title=label;b.setAttribute('aria-label',p.title+' '+label+' 이동');b.onclick=()=>movePlan(p.id,rowIndex+delta,cls);arrows.append(b)}
+   controls.append(handle,arrows);
    const name=el('input','plan-title-input');name.value=p.title;name.maxLength=100;name.setAttribute('aria-label','계획명 '+p.title);
    name.onchange=()=>{const next=copy(),plan=next.plans.find(x=>x.id===p.id);const title=name.value.trim();if(!title){name.value=p.title;return}plan.title=title;if(persist(next))renderPlans()};
-   const settings=el('button','plan-settings-button','⚙');settings.setAttribute('aria-label',p.title+' 색상·삭제');settings.onclick=()=>{planEditing=p.id;$('plan-edit-title').value=p.title;$('plan-edit-color').value=p.color;$('plan-settings').showModal()};title.append(name,settings);row.append(title);
+   const settings=el('button','plan-settings-button','⚙');settings.setAttribute('aria-label',p.title+' 색상·삭제');settings.onclick=()=>{planEditing=p.id;$('plan-edit-title').value=p.title;$('plan-edit-color').value=p.color;$('plan-settings').showModal()};title.append(controls,name,settings);row.append(title);
    for(const [col,date] of dates.entries()){
     const dateKey=TodoModel.dateKey(date),entry=p.cells[dateKey],td=el('td',date.getMonth()!==planMonth.getMonth()?'adjacent':'');
     const button=el('button',entry&&!entry.unpainted?entry.color:'');button.type='button';button.dataset.cell=cellKey(p.id,dateKey);button.dataset.row=rowIndex;button.dataset.col=col;
@@ -67,7 +87,7 @@
   }
   const addRow=el('tr'),addCell=el('th','plan-name');
   const form=el('form','inline-plan-form');form.id='plan-form';const input=el('input');input.id='plan-title';input.maxLength=100;input.placeholder='+ 새 계획 입력';input.required=true;input.setAttribute('aria-label','새 계획');const add=el('button','','+');add.setAttribute('aria-label','계획 추가');form.append(input,add);
-  form.onsubmit=e=>{e.preventDefault();const title=input.value.trim();if(!title)return;const next=copy();next.plans.push({id:crypto.randomUUID(),title,color:colors[data.plans.length%colors.length],cells:{}});if(persist(next))renderPlans()};addCell.append(form);addRow.append(addCell);const empty=el('td');empty.colSpan=dates.length;empty.className='plan-add-hint';empty.textContent='왼쪽 칸에 계획을 적고 Enter · 계획명은 바로 수정, ⚙에서 색상·삭제';addRow.append(empty);body.append(addRow);
+  form.onsubmit=e=>{e.preventDefault();const title=input.value.trim();if(!title)return;const next=copy();next.plans.push({id:crypto.randomUUID(),title,color:colors[data.plans.length%colors.length],cells:{}});if(persist(next))renderPlans()};addCell.append(form);addRow.append(addCell);const empty=el('td');empty.colSpan=dates.length;empty.className='plan-add-hint';empty.textContent='왼쪽 칸에 계획을 적고 Enter · ⠿를 끌거나 ↑↓로 순서 변경 · 계획명은 바로 수정, ⚙에서 색상·삭제';addRow.append(empty);body.append(addRow);
   table.append(body);grid.append(table);grid.scrollLeft=scrollLeft;grid.scrollTop=scrollTop;updateSelection();
  }
  document.addEventListener('pointerup',()=>{if(dragging){dragging=false;showPalette()}});

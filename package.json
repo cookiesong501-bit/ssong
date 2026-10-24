@@ -1,6 +1,6 @@
 {
   "name": "ssong-todo",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "private": true,
   "description": "일정·회고·연간 및 월간 계획·알람·메모를 담는 쏭 플래너",
   "author": "ssong",
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node test/repeat.test.cjs && node test/ui-repeat.cjs && node test/main-repeat.cjs",
+    "test": "node test/repeat.test.cjs && node test/ui-repeat.cjs && node test/main-repeat.cjs && node test/plan-order.cjs",
     "dist:win": "electron-builder --win portable --x64 --publish never"
   },
   "devDependencies": {

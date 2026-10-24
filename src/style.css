@@ -56,3 +56,15 @@ body.alert{min-height:100vh;padding:16px 27px 27px;background:#fcf6eb;border-top
 .task-status-wrap::after{content:'';position:absolute;right:5px;top:50%;width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-70%) rotate(45deg);pointer-events:none}
 
 .repeat-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}.repeat-row label{display:flex;align-items:center;gap:6px;font-size:12px}.repeat-row [hidden]{display:none}.repeat-row select,.repeat-row input{padding:6px;border:1px solid #d9c9ba;border-radius:8px;background:#fffaf3;color:#302922;font:inherit}.repeat-row input{width:64px}.repeat-hint{font-size:11px;color:#74665c;line-height:1.5;margin:6px 0}.repeat-badge{font-size:10px;color:#796149;margin-left:7px;background:#f5ebdd;border-radius:4px;padding:2px 4px}.compact-form{flex-shrink:0}
+
+/* Monthly plan order controls */
+.month-sheet .plan-title-input{width:calc(100% - 62px)}
+.plan-row-controls{display:inline-flex;vertical-align:middle;align-items:center;width:39px;gap:1px}
+.plan-row-controls button{background:transparent;border:0;padding:0;color:#625349;border-radius:3px;min-width:0}
+.plan-drag-handle{width:19px;height:28px;cursor:grab;font-size:18px;touch-action:none}
+.plan-drag-handle:active{cursor:grabbing}
+.plan-order-arrows{display:inline-flex;flex-direction:column;width:18px}
+.plan-order-arrows button{width:18px;height:14px;font-size:11px;line-height:14px}
+.plan-row-controls button:disabled{opacity:.25;cursor:default}
+.plan-row-controls button:focus-visible{outline:2px solid #66558a;outline-offset:-1px}
+.month-sheet tr.plan-drop-target>th,.month-sheet tr.plan-drop-target>td{box-shadow:inset 0 3px #66558a}
