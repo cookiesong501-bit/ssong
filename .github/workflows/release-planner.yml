@@ -2,7 +2,7 @@ name: Release planner portable
 on:
   push:
     branches: [release/planner-1.4.5]
-    paths: [.github/workflows/release-planner.yml]
+    paths: [.github/workflows/release-planner.yml, 'src/**', 'test/**', main.js, preload.js, package.json, package-lock.json]
   workflow_dispatch:
 permissions:
   contents: write
