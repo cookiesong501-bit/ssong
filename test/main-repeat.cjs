@@ -1,0 +1,12 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs'),path=require('node:path'),model=require('../src/model');
+test('main process persists occurrence alarms and accepts popup answers',async()=>{
+ const handlers={},windows=[],sent=[],writes={};let tick;const task={id:'series',date:'2026-01-01',text:'매일',start:'00:00',end:'23:59',status:'planned',repeat:{type:'daily'}};
+ class Window{constructor(options){this.options=options;this.events={};this.webContents={send:(...a)=>sent.push(a),once:(event,fn)=>fn()};windows.push(this)}on(n,fn){this.events[n]=fn}loadFile(){}close(){this.events.closed?.()}isMinimized(){return false}static fromWebContents(sender){return windows.find(w=>w.webContents===sender)}}
+ class Tray{setToolTip(){}setContextMenu(){}on(){}}
+ const electron={app:{setPath(){},setName(){},getPath:()=>'/tmp/mock',requestSingleInstanceLock:()=>true,on(){},whenReady:()=>Promise.resolve(),isPackaged:true},BrowserWindow:Window,Tray,Menu:{setApplicationMenu(){},buildFromTemplate:x=>x},ipcMain:{on:(n,f)=>handlers[n]=f,handle:(n,f)=>handlers[n]=f},nativeImage:{createFromPath(){}},powerMonitor:{on(){}},shell:{beep(){}}};
+ const fakeFs={readFileSync(file){return file.endsWith('tasks.json')?JSON.stringify([task]):'[]'},mkdirSync(){},writeFileSync:(file,data)=>writes[file]=data,renameSync:(from,to)=>writes[to]=writes[from]};
+ const context={__dirname:path.resolve('.'),process:{platform:'win32',env:{PORTABLE_EXECUTABLE_FILE:'app.exe'}},setInterval:fn=>tick=fn,require:n=>n==='electron'?electron:n==='node:fs'?fakeFs:n==='./src/model'?model:n==='./src/holidays'?()=>({}):require(n)};
+ vm.runInNewContext(fs.readFileSync('main.js','utf8'),context);await new Promise(r=>setImmediate(r));assert.equal(windows.length,2);const today=model.dateKey(),id='series@'+today;
+ let state=handlers.load();assert.equal(model.resolve(state.tasks,id).startNotified,true);assert.equal(state.tasks[0].startNotified,undefined);
+ handlers.answer({sender:windows[1].webContents},{id,status:'done'});state=handlers.load();assert.equal(model.resolve(state.tasks,id).status,'done');assert.ok(model.resolve(state.tasks,id).completedAt);const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);assert.equal(model.forDate(state.tasks,model.dateKey(tomorrow))[0].status,'planned');tick();assert.equal(windows.length,2);assert.ok(writes['/tmp/mock/tasks.json']);
+});
