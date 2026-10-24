@@ -1,0 +1,45 @@
+name: Release planner portable
+on:
+  push:
+    branches: [release/planner-1.4.5]
+    paths: [.github/workflows/release-planner.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Package source and checksum
+        shell: pwsh
+        run: |
+          git archive --format=zip HEAD -o dist/ssong-planner-source-1.4.5.zip
+          $hash = (Get-FileHash dist/ssong-planner-portable-1.4.5.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  ssong-planner-portable-1.4.5.exe" | Set-Content dist/ssong-planner-portable-1.4.5.exe.sha256 -Encoding utf8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ssong-planner-portable-1.4.5
+          path: |
+            dist/ssong-planner-portable-1.4.5.exe
+            dist/ssong-planner-portable-1.4.5.exe.sha256
+            dist/ssong-planner-source-1.4.5.zip
+      - name: Publish downloads
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view v1.4.5 >/dev/null 2>&1; then
+            gh release create v1.4.5 --target "$GITHUB_SHA" --title '쏭 플래너 1.4.5 · 반복 일정' --notes-file 사용안내.txt
+          fi
+          gh release upload v1.4.5 dist/ssong-planner-portable-1.4.5.exe dist/ssong-planner-portable-1.4.5.exe.sha256 dist/ssong-planner-source-1.4.5.zip --clobber
+          gh release edit v1.4.5 --draft=false
