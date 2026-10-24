@@ -1,7 +1,7 @@
 name: Release planner portable
 on:
   push:
-    branches: [release/planner-1.4.5]
+    branches: [release/planner-1.4.6]
     paths: [.github/workflows/release-planner.yml, 'src/**', 'test/**', main.js, preload.js, package.json, package-lock.json]
   workflow_dispatch:
 permissions:
@@ -23,23 +23,23 @@ jobs:
       - name: Package source and checksum
         shell: pwsh
         run: |
-          git archive --format=zip HEAD -o dist/ssong-planner-source-1.4.5.zip
-          $hash = (Get-FileHash dist/ssong-planner-portable-1.4.5.exe -Algorithm SHA256).Hash.ToLower()
-          "$hash  ssong-planner-portable-1.4.5.exe" | Set-Content dist/ssong-planner-portable-1.4.5.exe.sha256 -Encoding utf8
+          git archive --format=zip HEAD -o dist/ssong-planner-source-1.4.6.zip
+          $hash = (Get-FileHash dist/ssong-planner-portable-1.4.6.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  ssong-planner-portable-1.4.6.exe" | Set-Content dist/ssong-planner-portable-1.4.6.exe.sha256 -Encoding utf8
       - uses: actions/upload-artifact@v4
         with:
-          name: ssong-planner-portable-1.4.5
+          name: ssong-planner-portable-1.4.6
           path: |
-            dist/ssong-planner-portable-1.4.5.exe
-            dist/ssong-planner-portable-1.4.5.exe.sha256
-            dist/ssong-planner-source-1.4.5.zip
+            dist/ssong-planner-portable-1.4.6.exe
+            dist/ssong-planner-portable-1.4.6.exe.sha256
+            dist/ssong-planner-source-1.4.6.zip
       - name: Publish downloads
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view v1.4.5 >/dev/null 2>&1; then
-            gh release create v1.4.5 --target "$GITHUB_SHA" --title '쏭 플래너 1.4.5 · 반복 일정' --notes-file 사용안내.txt
+          if ! gh release view v1.4.6 >/dev/null 2>&1; then
+            gh release create v1.4.6 --target "$GITHUB_SHA" --title '쏭 플래너 1.4.6 · 반복 종료일' --notes-file 사용안내.txt
           fi
-          gh release upload v1.4.5 dist/ssong-planner-portable-1.4.5.exe dist/ssong-planner-portable-1.4.5.exe.sha256 dist/ssong-planner-source-1.4.5.zip --clobber
-          gh release edit v1.4.5 --draft=false
+          gh release upload v1.4.6 dist/ssong-planner-portable-1.4.6.exe dist/ssong-planner-portable-1.4.6.exe.sha256 dist/ssong-planner-source-1.4.6.zip --clobber
+          gh release edit v1.4.6 --draft=false
